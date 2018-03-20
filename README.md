@@ -7,7 +7,7 @@ Performs 'ensemble' fuzzy matching using 4 different phonetic transcription algo
 items2Match2 - destination vector containing items to match to  
 items2BMatch - source vector containing items to be matched  
 
-matchNames(items2BMatch).matchNames(items2Match2) - returns dataframe of Original and Match columns 
+<b>matchNames(items2BMatch).matchNames(items2Match2)</b> - returns dataframe of Original and Match columns 
   
 matchNames(items2BMatch).rplcNames(items2Match2) - returns vector of original length as items2BMatch with replacements where matched or else the original item  
   
