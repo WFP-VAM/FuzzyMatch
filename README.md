@@ -11,7 +11,7 @@ items2BMatch - source vector containing items to be matched
   
 <b>fuzzyMatch(items2BMatch).rplcNames(items2Match2)</b> - returns vector of original length as items2BMatch with replacements where matched or else the original item  
   
-<b>fuzzyMatch.grpByMatch(dfitems2BMatch,dfitems2Match2)</b> - returns dataframe of dimension of dfitems2BMatch with matches where found or else filled by original item  
+<b>fuzzyMatch(dfitems2BMatch).grpByMatch(dfitems2Match2)</b> - returns dataframe of dimension of dfitems2BMatch with matches where found or else filled by original item  
 
 
 
