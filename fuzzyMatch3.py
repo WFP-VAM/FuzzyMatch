@@ -22,11 +22,12 @@ class fuzzyMatch:
             SX = fz.Soundex(4)
             if type(vec)!=pd.core.series.Series:
                 vec = pd.Series(vec)
-            vec = vec.map(lambda x: re.sub('\s+',' ',
-                                           re.sub(r"[^\w'\s-]", '',
-                                                  unicodedata.normalize('NFKD', unicode(x)).encode('ascii', 'ignore')))
-                                                    .strip().replace(' - ','-'))
-            df = vec.map(lambda x: [x]+DM(unicode(x))+[fz.nysiis(unicode(x))]+[jf.match_rating_codex(unicode(x))]+[jf.soundex(unicode(x))]).apply(pd.Series)
+            
+            vec = vec.map(lambda x: re.sub(b'\s+',b' ',
+                                           re.sub(b"[^\w'\s-]", b'',
+                                                  unicodedata.normalize('NFKD', str(x)).encode('ascii', 'ignore')))
+                                                    .strip().replace(b' - ',b'-'))
+            df = vec.map(lambda x: [str(x)]+DM(str(x))+[fz.nysiis(str(x))]+[jf.match_rating_codex(str(x))]+[jf.soundex(str(x))]).apply(pd.Series)
             df.loc[:,0] = df.loc[:,0].map(lambda x: x.lower().replace('-',' ').replace("'",""))
             return df
         
@@ -40,7 +41,7 @@ class fuzzyMatch:
         def filterByEditDist(mrgDF,minMatchRatio=0.885):
             if mrgDF.empty:
                 return mrgDF
-            mrgDF['Dist'] = mrgDF.apply(lambda x: jf.jaro_winkler(unicode(x[0]),unicode(x[1])),axis=1)
+            mrgDF['Dist'] = mrgDF.apply(lambda x: jf.jaro_winkler(str(x[0]),str(x[1])),axis=1)
             mrgDF = mrgDF.groupby('Original').apply(lambda x: x[x.Dist==x.Dist.max()]).reset_index(drop=True)
             return mrgDF.loc[mrgDF['Dist']>=minMatchRatio,['Original','Match']]
         
@@ -129,9 +130,12 @@ class fuzzyMatch:
         return rplcVec
 
     #Performs nested match where matches must be within grouped subsets (e.g. markets must match within adm1 and adm2 districts)
-    def grpByMatch(self,dfRplc,cols):
+    def grpByMatch(self,dfRplc,cols=[]):
 
         dfSub = self.fromVec
+
+        if len(cols)==0:
+            cols = pd.Index.intersection(dfSub.columns,dfRplc.columns)
 
         #First find and replace the first column
         findVec = dfSub.loc[:,cols[0]].drop_duplicates().reset_index(drop=True)
