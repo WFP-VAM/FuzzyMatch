@@ -130,42 +130,44 @@ class fuzzyMatch:
         return rplcVec
 
     #Performs nested match where matches must be within grouped subsets (e.g. markets must match within adm1 and adm2 districts)
-    def grpByMatch(self,dfRplc,cols=[]):
+    def grpByMatch(self,dfRplc,cols=[],minMatchRatio=0.885):
 
         dfSub = self.fromVec
 
-        if len(cols)==0:
-            cols = pd.Index.intersection(dfSub.columns,dfRplc.columns)
+        for i in range(0,3):
 
-        #First find and replace the first column
-        findVec = dfSub.loc[:,cols[0]].drop_duplicates().reset_index(drop=True)
-        rplcVec = dfRplc.loc[:,cols[0]].drop_duplicates().reset_index(drop=True)
-        toSubVec = fuzzyMatch(findVec).matchNames(rplcVec).set_index('Original')['Match']
-        dfSub.loc[:,cols[0]] = dfSub.loc[:,cols[0]].replace(toSubVec.to_dict())
-        
-        if len(cols)>1:
-            #Now progressively increase the set of group by columns
-            for i in range(1,len(cols)):
-                grpByCols = cols[0:i]
-                mtchCol = cols[i]
-                
-                #create groups from group by cols
-                grouped = dfSub.loc[:,grpByCols+[mtchCol]].groupby(grpByCols)
-                for name, group in grouped:
+            if len(cols)==0:
+                cols = pd.Index.intersection(dfSub.columns,dfRplc.columns)
+
+            #First find and replace the first column
+            findVec = dfSub.loc[:,cols[0]].drop_duplicates().reset_index(drop=True)
+            rplcVec = dfRplc.loc[:,cols[0]].drop_duplicates().reset_index(drop=True)
+            toSubVec = fuzzyMatch(findVec).matchNames(rplcVec).set_index('Original')['Match']
+            dfSub.loc[:,cols[0]] = dfSub.loc[:,cols[0]].replace(toSubVec.to_dict())
+            
+            if len(cols)>1:
+                #Now progressively increase the set of group by columns
+                for i in range(1,len(cols)):
+                    grpByCols = cols[0:i]
+                    mtchCol = cols[i]
                     
-                    #vector of names to be replaced
-                    findVec = group.loc[:,mtchCol].drop_duplicates().dropna().reset_index(drop=True)
-                    #vector of substitute names to be matched to
-                    rplcDf  = pd.merge(dfRplc.loc[:,grpByCols+[mtchCol]].drop_duplicates(),group.loc[:,grpByCols].drop_duplicates(),on=grpByCols)
-                    rplcVec = rplcDf.loc[:,mtchCol].drop_duplicates().dropna().reset_index(drop=True)
-                    
-                    #perform fuzzy match
-                    if not findVec.empty and not rplcVec.empty:
-                        toSubVec = fuzzyMatch(findVec).matchNames(rplcVec).set_index('Original')['Match']
+                    #create groups from group by cols
+                    grouped = dfSub.loc[:,grpByCols+[mtchCol]].groupby(grpByCols)
+                    for name, group in grouped:
                         
-                        #substitute results into original DF
-                        if not toSubVec.empty:
-                            dfSub.loc[group.index.values,mtchCol] = dfSub.loc[group.index.values,mtchCol].replace(toSubVec.to_dict())
+                        #vector of names to be replaced
+                        findVec = group.loc[:,mtchCol].drop_duplicates().dropna().reset_index(drop=True)
+                        #vector of substitute names to be matched to
+                        rplcDf  = pd.merge(dfRplc.loc[:,grpByCols+[mtchCol]].drop_duplicates(),group.loc[:,grpByCols].drop_duplicates(),on=grpByCols)
+                        rplcVec = rplcDf.loc[:,mtchCol].drop_duplicates().dropna().reset_index(drop=True)
+                        
+                        #perform fuzzy match
+                        if not findVec.empty and not rplcVec.empty:
+                            toSubVec = fuzzyMatch(findVec).matchNames(rplcVec,minMatchRatio).set_index('Original')['Match']
+                            
+                            #substitute results into original DF
+                            if not toSubVec.empty:
+                                dfSub.loc[group.index.values,mtchCol] = dfSub.loc[group.index.values,mtchCol].replace(toSubVec.to_dict())
 
         return dfSub
 
